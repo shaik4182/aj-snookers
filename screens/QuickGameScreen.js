@@ -1,46 +1,29 @@
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, TextInput, Alert } from 'react-native';
+import { View, Text, Button, StyleSheet, Alert } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
 const QuickGame = () => {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
   const [selectedGame, setSelectedGame] = useState('');
+  const [selectedSlot, setSelectedSlot] = useState('');
 
   const handleBooking = () => {
-    if (!name || !phone || !selectedGame) {
-      Alert.alert('Error', 'Please fill all fields and select a game.');
+    if (!selectedGame || !selectedSlot) {
+      Alert.alert('Error', 'Please select both game and time slot.');
       return;
     }
 
     Alert.alert(
       'Booking Confirmed',
-      `Name: ${name}\nPhone: ${phone}\nGame: ${selectedGame}\nAmount: ₹${selectedGame === 'Snooker' ? '80' : '120'}`
+      `Game: ${selectedGame}\nSlot: ${selectedSlot}\nAmount: ₹${selectedGame === 'Snooker' ? '80' : '120'}`
     );
 
-    // Here you can later integrate Firebase Firestore to store bookings
-    setName('');
-    setPhone('');
     setSelectedGame('');
+    setSelectedSlot('');
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Quick Game Booking</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your name"
-        value={name}
-        onChangeText={setName}
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Enter mobile number"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-      />
 
       <Text style={styles.label}>Select Game:</Text>
       <View style={styles.buttonGroup}>
@@ -55,6 +38,23 @@ const QuickGame = () => {
           onPress={() => setSelectedGame('8 Ball Pool')}
           color={selectedGame === '8 Ball Pool' ? '#4CAF50' : undefined}
         />
+      </View>
+
+      <Text style={styles.label}>Select Time Slot:</Text>
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={selectedSlot}
+          onValueChange={(itemValue) => setSelectedSlot(itemValue)}
+        >
+          <Picker.Item label="-- Select Slot --" value="" />
+          <Picker.Item label="10:00 AM - 11:00 AM" value="10:00 AM - 11:00 AM" />
+          <Picker.Item label="11:00 AM - 12:00 PM" value="11:00 AM - 12:00 PM" />
+          <Picker.Item label="12:00 PM - 1:00 PM" value="12:00 PM - 1:00 PM" />
+          <Picker.Item label="4:00 PM - 5:00 PM" value="4:00 PM - 5:00 PM" />
+          <Picker.Item label="6:00 PM - 7:00 PM" value="6:00 PM - 7:00 PM" />
+          <Picker.Item label="8:00 PM - 9:00 PM" value="8:00 PM - 9:00 PM" />
+          <Picker.Item label="9:00 PM - 10:00 PM" value="9:00 PM - 10:00 PM" />
+        </Picker>
       </View>
 
       <View style={{ marginTop: 30 }}>
@@ -78,18 +78,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: 'center',
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#999',
-    borderRadius: 6,
-    padding: 10,
-    marginBottom: 15,
-  },
   label: {
     fontSize: 16,
     marginBottom: 10,
   },
   buttonGroup: {
     marginBottom: 20,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#999',
+    borderRadius: 6,
+    marginBottom: 15,
   },
 });

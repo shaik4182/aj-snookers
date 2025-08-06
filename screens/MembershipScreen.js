@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, Platform } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import * as DocumentPicker from 'expo-document-picker';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function MembershipScreen() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [govtIdType, setGovtIdType] = useState('');
-  const [govtIdFile, setGovtIdFile] = useState(null);
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
   const [membershipRegistered, setMembershipRegistered] = useState(false);
   const [remainingDays, setRemainingDays] = useState(0);
 
@@ -48,25 +46,9 @@ export default function MembershipScreen() {
     fetchMembershipStatus();
   }, []);
 
-  const handleDocumentUpload = async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',
-        copyToCacheDirectory: true,
-      });
-
-      if (result.assets && result.assets.length > 0) {
-        setGovtIdFile(result.assets[0]);
-        Alert.alert('Success', 'ID uploaded successfully!');
-      }
-    } catch (err) {
-      Alert.alert('Upload Error', err.message);
-    }
-  };
-
   const handleRegister = async () => {
-    if (!name || !phone || !email || !govtIdType || !govtIdFile) {
-      Alert.alert('Missing Info', 'Please fill all fields and upload your ID.');
+    if (!name || !phone || !email || !govtIdType || !aadhaarNumber) {
+      Alert.alert('Missing Info', 'Please fill all fields.');
       return;
     }
 
@@ -75,21 +57,13 @@ export default function MembershipScreen() {
       const user = auth.currentUser;
       if (!user) throw new Error('User not authenticated');
 
-      const storage = getStorage();
-      const storageRef = ref(storage, `govtIds/${user.uid}/${govtIdFile.name}`);
-      const response = await fetch(govtIdFile.uri);
-      const blob = await response.blob();
-
-      await uploadBytes(storageRef, blob);
-      const downloadURL = await getDownloadURL(storageRef);
-
       const db = getFirestore();
       await setDoc(doc(db, 'members', user.uid), {
         name,
         phone,
         email,
         govtIdType,
-        govtIdUrl: downloadURL,
+        aadhaarNumber,
         registeredAt: new Date().toISOString(),
       });
 
@@ -103,7 +77,7 @@ export default function MembershipScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Membership</Text>
 
       {membershipRegistered ? (
@@ -115,31 +89,74 @@ export default function MembershipScreen() {
           <TextInput style={styles.input} placeholder="Email Address" keyboardType="email-address" value={email} onChangeText={setEmail} />
 
           <Text style={styles.label}>Select Govt ID Type:</Text>
-          <Picker selectedValue={govtIdType} onValueChange={(itemValue) => setGovtIdType(itemValue)} style={styles.picker}>
+          <Picker selectedValue={govtIdType} onValueChange={setGovtIdType} style={styles.picker}>
             <Picker.Item label="-- Select --" value="" />
             <Picker.Item label="Aadhaar Card" value="aadhaar" />
             <Picker.Item label="PAN Card" value="pan" />
           </Picker>
 
-          {!govtIdFile ? (
-            <Button title="Upload Govt ID" onPress={handleDocumentUpload} />
-          ) : (
-            <Text style={styles.uploaded}>✅ ID Uploaded: {govtIdFile.name || 'File selected'}</Text>
-          )}
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Aadhaar/PAN Number"
+            value={aadhaarNumber}
+            onChangeText={setAadhaarNumber}
+          />
 
           <Button title="Register Membership (₹5000/month)" onPress={handleRegister} />
         </>
       )}
-    </View>
+
+      <Text style={styles.noteTitle}>📝 Membership Info</Text>
+      <View style={styles.noteBox}>
+        <Text>⏰ Timing Slots (Daily):</Text>
+        <Text> • Morning: 10:00 AM – 1:00 PM</Text>
+        <Text> • Afternoon: 2:00 PM – 5:00 PM</Text>
+
+        <Text style={styles.spacer} />
+
+        <Text>🔔 Book your slot before visiting.</Text>
+
+        <Text style={styles.spacer} />
+
+        <Text>🎮 Daily Playing Limits:</Text>
+        <Text> 🟢 Snooker: Up to 4 games/day</Text>
+        <Text> 🔵 8 Ball Pool: Up to 2 hours/day</Text>
+        <Text> 🚫 Only one game type Snooker or 8 Ball pool per day.</Text>
+
+        <Text style={styles.spacer} />
+
+        <Text>🎁 Benefits:</Text>
+        <Text> 🏆 Win all 4 snooker games → ₹200 reward</Text>
+        <Text> 📅 Valid for 30 days</Text>
+        <Text> 🎫 Priority slot booking</Text>
+        <Text> 📸 One-time Govt ID proof (used every time)</Text>
+
+        <Text style={styles.spacer} />
+
+        <Text>📌 Rules:</Text>
+        <Text> ⚠️ Must book slot before arrival</Text>
+        <Text> 🚷 No carry forward of unused time</Text>
+        <Text> 👤 Membership is non-transferable</Text>
+        <Text> 🔄 Re-register after 30 days</Text>
+
+        <Text style={styles.spacer} />
+
+        <Text>✅ Extra Suggestions (Optional):</Text>
+        <Text> 📅 Weekend bonus hour if no crowd</Text>
+        <Text> 📸 Weekly leaderboard (top players)</Text>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: { padding: 20 },
   title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
   input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 12, borderRadius: 6 },
   picker: { height: 50, width: '100%', marginBottom: 15 },
   label: { marginBottom: 5 },
-  uploaded: { marginVertical: 10, color: 'green' },
-  successText: { marginTop: 20, color: 'blue', fontWeight: 'bold', fontSize: 16 },
+  successText: { marginVertical: 20, color: 'green', fontWeight: 'bold', fontSize: 16 },
+  noteTitle: { fontSize: 20, fontWeight: 'bold', marginTop: 20, marginBottom: 10 },
+  noteBox: { backgroundColor: '#f8f8f8', padding: 15, borderRadius: 10 },
+  spacer: { marginVertical: 6 }
 });
