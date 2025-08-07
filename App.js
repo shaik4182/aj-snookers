@@ -6,6 +6,7 @@ import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
 import QuickGameScreen from './screens/QuickGameScreen';
 import MembershipScreen from './screens/MembershipScreen';
+import AdminBookingsScreen from './screens/AdminBookingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,7 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="QuickGame" component={QuickGameScreen} />
         <Stack.Screen name="Membership" component={MembershipScreen} />
+        <Stack.Screen name="AdminBookings" component={AdminBookingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
