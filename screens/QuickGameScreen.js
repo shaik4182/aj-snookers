@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, Alert, TextInput } from 'react-native';
+import { View, Text, Button, StyleSheet, Alert, TextInput, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
 import { db } from '../firebaseConfig';
 import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
@@ -12,13 +13,13 @@ const QuickGame = () => {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const startTimes = [
     '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM',
-    '4:00 PM', '6:00 PM', '8:00 PM', '9:00 PM',
+    '4:00 PM', '6:00 PM', '8:00 PM', '9:00 PM','10:00 PM',
   ];
-
-  const today = moment().format('YYYY-MM-DD');
 
   const fetchBookedSlots = async () => {
     if (!selectedGame) {
@@ -26,9 +27,11 @@ const QuickGame = () => {
       return;
     }
 
+    const selectedDateStr = moment(date).format('YYYY-MM-DD');
+
     const q = query(
       collection(db, 'bookings'),
-      where('date', '==', today),
+      where('date', '==', selectedDateStr),
       where('gameType', '==', selectedGame)
     );
 
@@ -39,7 +42,7 @@ const QuickGame = () => {
 
   useEffect(() => {
     fetchBookedSlots();
-  }, [selectedGame]);
+  }, [selectedGame, date]);
 
   const parseTime = (timeStr) => moment(timeStr, ['h:mm A']);
 
@@ -89,7 +92,7 @@ const QuickGame = () => {
       name: name.trim(),
       phone: phone.trim(),
       gameType: selectedGame,
-      date: today,
+      date: moment(date).format('YYYY-MM-DD'),
       startTime: start.format('h:mm A'),
       endTime: end.format('h:mm A'),
     };
@@ -101,7 +104,6 @@ const QuickGame = () => {
         `Name: ${name}\nPhone: ${phone}\nGame: ${selectedGame}\nSlot: ${finalSlot}\n${selectedGame === 'Snooker' ? `Games: ${games}\n` : ''}Amount: ₹${amount}`
       );
 
-      // Reset
       setSelectedGame('');
       setSelectedStartTime('');
       setSnookerGames('1');
@@ -113,9 +115,32 @@ const QuickGame = () => {
     }
   };
 
+  const isPastTime = (time) => {
+    if (moment(date).isSame(moment(), 'day')) {
+      const now = moment();
+      return parseTime(time).isBefore(now);
+    }
+    return false;
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
       <Text style={styles.title}>Quick Game Booking</Text>
+
+      <Text style={styles.label}>Select Date:</Text>
+      <Button title={moment(date).format('DD MMM YYYY')} onPress={() => setShowDatePicker(true)} />
+      {showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={(event, selectedDate) => {
+            setShowDatePicker(false);
+            if (selectedDate) setDate(selectedDate);
+          }}
+          minimumDate={new Date()}
+        />
+      )}
 
       <Text style={styles.label}>Name:</Text>
       <TextInput
@@ -174,7 +199,10 @@ const QuickGame = () => {
               key={time}
               label={time}
               value={time}
-              enabled={!isOverlap(parseTime(time), parseTime(time).clone().add(selectedGame === 'Snooker' ? parseInt(snookerGames || '1') * 30 : 60, 'minutes'))}
+              enabled={
+                !isOverlap(parseTime(time), parseTime(time).clone().add(selectedGame === 'Snooker' ? parseInt(snookerGames || '1') * 30 : 60, 'minutes'))
+                && !isPastTime(time)
+              }
             />
           ))}
         </Picker>
@@ -187,17 +215,17 @@ const QuickGame = () => {
       <View style={{ marginTop: 30 }}>
         <Button title="Book Slot" onPress={handleBooking} />
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 export default QuickGame;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  scrollContainer: {
     padding: 25,
     backgroundColor: '#fff',
+    flexGrow: 1,
   },
   title: {
     fontSize: 24,
