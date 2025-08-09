@@ -28,7 +28,8 @@ export default function SignupScreen({ navigation }) {
         email: email.trim(),
         membershipActive: false,
         membershipStart: null,
-        membershipEnd: null
+        membershipEnd: null,
+        role: "user" // default role
       });
 
       Alert.alert('Success', 'Signup Successful!');

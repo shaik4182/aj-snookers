@@ -1,21 +1,50 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native'; // ✅ FIXED: added View & ActivityIndicator
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { auth, db } from '../firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
+
 import HomeStack from './HomeStack';
 import MyBookingsScreen from '../screens/MyBookingsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-
-const MyBookings = () => (
-  <Tab.Screen name="My Bookings" component={MyBookingsScreen} />
-);
-
-const Profile = () => (
-  <Tab.Screen name="Profile" component={ProfileScreen} />
-);
+import AdminPanelScreen from '../screens/AdminPanelScreen';
 
 const Tab = createBottomTabNavigator();
 
 export default function MainTabs() {
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        const user = auth.currentUser;
+        if (!user) return;
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          setRole(userDoc.data().role || 'user');
+        } else {
+          setRole('user');
+        }
+      } catch (error) {
+        console.error('Error fetching role:', error);
+        setRole('user');
+      }
+      setLoading(false);
+    };
+
+    fetchRole();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#2980b9" />
+      </View>
+    );
+  }
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -25,6 +54,7 @@ export default function MainTabs() {
           if (route.name === 'Home') iconName = 'home';
           else if (route.name === 'My Bookings') iconName = 'calendar';
           else if (route.name === 'Profile') iconName = 'person';
+          else if (route.name === 'Admin') iconName = 'settings';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#2980b9',
@@ -34,6 +64,7 @@ export default function MainTabs() {
       <Tab.Screen name="Home" component={HomeStack} />
       <Tab.Screen name="My Bookings" component={MyBookingsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
+      {role === 'admin' && <Tab.Screen name="Admin" component={AdminPanelScreen} />}
     </Tab.Navigator>
   );
 }
