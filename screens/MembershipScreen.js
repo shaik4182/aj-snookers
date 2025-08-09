@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
-export default function MembershipScreen() {
+export default function MembershipScreen({ navigation }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -14,18 +14,27 @@ export default function MembershipScreen() {
   const [remainingDays, setRemainingDays] = useState(0);
 
   useEffect(() => {
-    const fetchMembershipStatus = async () => {
+    const fetchMembershipStatusAndUserInfo = async () => {
       try {
         const auth = getAuth();
         const user = auth.currentUser;
         if (!user) return;
 
         const db = getFirestore();
-        const docRef = doc(db, 'members', user.uid);
-        const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          const data = docSnap.data();
+        // ✅ Auto-fill user details
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setName(data.name || '');
+          setPhone(data.mobile || '');
+          setEmail(user.email || '');
+        }
+
+        // ✅ Check membership status
+        const memberDoc = await getDoc(doc(db, 'members', user.uid));
+        if (memberDoc.exists()) {
+          const data = memberDoc.data();
           const registeredDate = new Date(data.registeredAt);
           const now = new Date();
           const diffDays = Math.floor((now - registeredDate) / (1000 * 60 * 60 * 24));
@@ -39,41 +48,31 @@ export default function MembershipScreen() {
           }
         }
       } catch (error) {
-        console.error('Error checking membership:', error);
+        console.error('Error loading membership info:', error);
       }
     };
 
-    fetchMembershipStatus();
+    fetchMembershipStatusAndUserInfo();
   }, []);
 
-  const handleRegister = async () => {
+  const handleRegisterPress = () => {
     if (!name || !phone || !email || !govtIdType || !aadhaarNumber) {
       Alert.alert('Missing Info', 'Please fill all fields.');
       return;
     }
 
-    try {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) throw new Error('User not authenticated');
+    // Prepare bookingData-like object for Payment screen
+    const bookingData = {
+      name,
+      phone,
+      email,
+      govtIdType,
+      aadhaarNumber,
+      amount: 5000,
+      membership: true, // flag to identify in payment
+    };
 
-      const db = getFirestore();
-      await setDoc(doc(db, 'members', user.uid), {
-        name,
-        phone,
-        email,
-        govtIdType,
-        aadhaarNumber,
-        registeredAt: new Date().toISOString(),
-      });
-
-      setMembershipRegistered(true);
-      setRemainingDays(30);
-      Alert.alert('Membership Registered', 'You have 30 days remaining!');
-    } catch (error) {
-      console.error('Error during registration:', error);
-      Alert.alert('Registration Failed', error.message);
-    }
+    navigation.navigate('PaymentMethod', { bookingData });
   };
 
   return (
@@ -81,7 +80,9 @@ export default function MembershipScreen() {
       <Text style={styles.title}>Membership</Text>
 
       {membershipRegistered ? (
-        <Text style={styles.successText}>✅ Membership active. You have {remainingDays} days remaining!</Text>
+        <Text style={styles.successText}>
+          ✅ Membership active. You have {remainingDays} days remaining!
+        </Text>
       ) : (
         <>
           <TextInput style={styles.input} placeholder="Full Name" value={name} onChangeText={setName} />
@@ -102,7 +103,7 @@ export default function MembershipScreen() {
             onChangeText={setAadhaarNumber}
           />
 
-          <Button title="Register Membership (₹5000/month)" onPress={handleRegister} />
+          <Button title="Register Membership (₹5000/month)" onPress={handleRegisterPress} />
         </>
       )}
 
@@ -138,12 +139,6 @@ export default function MembershipScreen() {
         <Text> 🚷 No carry forward of unused time</Text>
         <Text> 👤 Membership is non-transferable</Text>
         <Text> 🔄 Re-register after 30 days</Text>
-
-        <Text style={styles.spacer} />
-
-        <Text>✅ Extra Suggestions (Optional):</Text>
-        <Text> 📅 Weekend bonus hour if no crowd</Text>
-        <Text> 📸 Weekly leaderboard (top players)</Text>
       </View>
     </ScrollView>
   );

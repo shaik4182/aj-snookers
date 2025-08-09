@@ -3,10 +3,10 @@ import { View, Text, Button, StyleSheet, Alert, TextInput, ScrollView } from 're
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
-import { db, auth } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
 import { collection, query, where, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
 
-const QuickGame = () => {
+const QuickGame = ({ navigation }) => {
   const [selectedGame, setSelectedGame] = useState('');
   const [selectedStartTime, setSelectedStartTime] = useState('');
   const [snookerGames, setSnookerGames] = useState('1');
@@ -21,22 +21,21 @@ const QuickGame = () => {
     '4:00 PM', '6:00 PM', '8:00 PM', '9:00 PM', '10:00 PM',
   ];
 
-  // 🔹 Fetch logged-in user's name & phone
+  // Fetch user details from Firestore
   useEffect(() => {
-    const fetchUserData = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
+    const fetchUserInfo = async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
 
-      const userDocRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userDocRef);
-      if (userSnap.exists()) {
-        const data = userSnap.data();
+      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
         setName(data.name || '');
         setPhone(data.mobile || '');
       }
     };
 
-    fetchUserData();
+    fetchUserInfo();
   }, []);
 
   const fetchBookedSlots = async () => {
@@ -46,6 +45,7 @@ const QuickGame = () => {
     }
 
     const selectedDateStr = moment(date).format('YYYY-MM-DD');
+
     const q = query(
       collection(db, 'bookings'),
       where('date', '==', selectedDateStr),
@@ -87,8 +87,8 @@ const QuickGame = () => {
   };
 
   const handleBooking = async () => {
-    if (!selectedGame || !selectedStartTime) {
-      Alert.alert('Error', 'Please select game and time.');
+    if (!selectedGame || !selectedStartTime || !name.trim() || !phone.trim()) {
+      Alert.alert('Error', 'Please fill all fields: Name, Phone, Game and Start Time.');
       return;
     }
 
@@ -103,25 +103,28 @@ const QuickGame = () => {
     }
 
     const amount = selectedGame === 'Snooker' ? 80 * games : 120;
-    const finalSlot = `${start.format('h:mm A')} - ${end.format('h:mm A')}`;
-
     const bookingData = {
-      name,
-      phone,
+      name: name.trim(),
+      phone: phone.trim(),
       gameType: selectedGame,
       date: moment(date).format('YYYY-MM-DD'),
       startTime: start.format('h:mm A'),
       endTime: end.format('h:mm A'),
-      userId: auth.currentUser.uid // 🔹 store user ID for filtering later
+      userId: auth.currentUser.uid
     };
 
     try {
       await addDoc(collection(db, 'bookings'), bookingData);
-      Alert.alert(
-        'Booking Confirmed',
-        `Name: ${name}\nPhone: ${phone}\nGame: ${selectedGame}\nSlot: ${finalSlot}\n${selectedGame === 'Snooker' ? `Games: ${games}\n` : ''}Amount: ₹${amount}`
-      );
 
+      // Navigate to PaymentMethod screen
+      navigation.navigate('PaymentMethod', {
+        bookingData: {
+          ...bookingData,
+          amount
+        }
+      });
+
+      // Reset fields
       setSelectedGame('');
       setSelectedStartTime('');
       setSnookerGames('1');
@@ -158,12 +161,22 @@ const QuickGame = () => {
         />
       )}
 
-      {/* Auto-filled Name & Phone */}
       <Text style={styles.label}>Name:</Text>
-      <TextInput style={styles.input} value={name} editable={false} />
+      <TextInput
+        style={styles.input}
+        value={name}
+        onChangeText={setName}
+        placeholder="Enter your name"
+      />
 
       <Text style={styles.label}>Phone Number:</Text>
-      <TextInput style={styles.input} value={phone} editable={false} />
+      <TextInput
+        style={styles.input}
+        value={phone}
+        onChangeText={setPhone}
+        keyboardType="phone-pad"
+        placeholder="Enter your phone number"
+      />
 
       <Text style={styles.label}>Select Game:</Text>
       <View style={styles.buttonGroup}>

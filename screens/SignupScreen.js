@@ -11,24 +11,24 @@ export default function SignupScreen({ navigation }) {
   const [phone, setPhone] = useState('');
 
   const handleSignup = async () => {
-    if (!email || !password || !name || !phone) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!email || !password || !name.trim() || !phone.trim()) {
+      Alert.alert('Error', 'Please fill all fields');
       return;
     }
 
     try {
-      // Create user in Firebase Authentication
+      // 1️⃣ Create auth user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Store extra profile info in Firestore
+      // 2️⃣ Save details to Firestore
       await setDoc(doc(db, 'users', user.uid), {
         name: name.trim(),
         mobile: phone.trim(),
         email: email.trim(),
         membershipActive: false,
         membershipStart: null,
-        membershipEnd: null,
+        membershipEnd: null
       });
 
       Alert.alert('Success', 'Signup Successful!');
