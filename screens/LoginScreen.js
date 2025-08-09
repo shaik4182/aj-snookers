@@ -2,49 +2,27 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth, db } from '../firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
+import { auth } from '../firebaseConfig';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter email and password');
       return;
     }
 
-    try {
-      // Sign in user
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Check if user exists in Firestore
-      const userRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (!userSnap.exists()) {
-        Alert.alert('Error', 'User profile not found.');
-        return;
-      }
-
-      const userData = userSnap.data();
-
-      // Optional: If you want to check for banned or inactive users
-      if (userData.status === 'banned') {
-        Alert.alert('Access Denied', 'Your account has been banned.');
-        return;
-      }
-
-      // Navigate to MainTabs after successful login
-      Alert.alert('Success', 'Login Successful!');
-      navigation.navigate('MainTabs');
-
-    } catch (error) {
-      Alert.alert('Login Error', error.message);
-    }
+    signInWithEmailAndPassword(auth, email, password)
+      .then(userCredential => {
+        Alert.alert('Success', 'Login Successful!');
+        navigation.navigate('MainTabs');
+      })
+      .catch(error => {
+        Alert.alert('Login Error', error.message);
+      });
   };
 
   return (
@@ -54,6 +32,7 @@ export default function LoginScreen({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Email Address"
+        placeholderTextColor="#ddd"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -63,6 +42,7 @@ export default function LoginScreen({ navigation }) {
         <TextInput
           style={styles.passwordInput}
           placeholder="Password"
+          placeholderTextColor="#ddd"
           secureTextEntry={!showPassword}
           value={password}
           onChangeText={setPassword}
@@ -71,12 +51,14 @@ export default function LoginScreen({ navigation }) {
           <Ionicons
             name={showPassword ? 'eye-off' : 'eye'}
             size={22}
-            color="#555"
+            color="#fff"
           />
         </TouchableOpacity>
       </View>
 
-      <Button title="Login" onPress={handleLogin} />
+      <View style={styles.buttonWrapper}>
+        <Button title="Login" color="#FFD700" onPress={handleLogin} />
+      </View>
 
       <Text
         style={styles.link}
@@ -92,40 +74,47 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    backgroundColor: '#fff',
     justifyContent: 'center',
+    backgroundColor: '#004d26', // snooker green
   },
   logoText: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#2c3e50',
+    color: '#FFD700', // gold
     marginBottom: 30,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#aaa',
+    borderColor: '#ccc',
     padding: 12,
     marginBottom: 15,
     borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    color: '#fff',
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#aaa',
+    borderColor: '#ccc',
     borderRadius: 6,
     paddingHorizontal: 12,
     marginBottom: 15,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   passwordInput: {
     flex: 1,
     paddingVertical: 12,
+    color: '#fff',
+  },
+  buttonWrapper: {
+    marginTop: 10,
   },
   link: {
     marginTop: 20,
     textAlign: 'center',
-    color: '#2980b9',
+    color: '#FFD700',
     textDecorationLine: 'underline',
   },
 });
