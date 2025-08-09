@@ -1,28 +1,50 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons'; // Make sure you have installed this
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter email and password');
       return;
     }
 
-    signInWithEmailAndPassword(auth, email, password)
-      .then(userCredential => {
-        Alert.alert('Success', 'Login Successful!');
-        navigation.navigate('MainTabs');
-      })
-      .catch(error => {
-        Alert.alert('Login Error', error.message);
-      });
+    try {
+      // Sign in user
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Check if user exists in Firestore
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
+        Alert.alert('Error', 'User profile not found.');
+        return;
+      }
+
+      const userData = userSnap.data();
+
+      // Optional: If you want to check for banned or inactive users
+      if (userData.status === 'banned') {
+        Alert.alert('Access Denied', 'Your account has been banned.');
+        return;
+      }
+
+      // Navigate to MainTabs after successful login
+      Alert.alert('Success', 'Login Successful!');
+      navigation.navigate('MainTabs');
+
+    } catch (error) {
+      Alert.alert('Login Error', error.message);
+    }
   };
 
   return (
