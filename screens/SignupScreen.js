@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function SignupScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -9,20 +10,32 @@ export default function SignupScreen({ navigation }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
 
-  const handleSignup = () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter all fields');
+  const handleSignup = async () => {
+    if (!email || !password || !name || !phone) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    createUserWithEmailAndPassword(auth, email, password)
-      .then(userCredential => {
-        Alert.alert('Success', 'Signup Successful!');
-        navigation.navigate('Login');
-      })
-      .catch(error => {
-        Alert.alert('Signup Error', error.message);
+    try {
+      // Create user in Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Store extra profile info in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        name: name.trim(),
+        mobile: phone.trim(),
+        email: email.trim(),
+        membershipActive: false,
+        membershipStart: null,
+        membershipEnd: null,
       });
+
+      Alert.alert('Success', 'Signup Successful!');
+      navigation.navigate('Login');
+    } catch (error) {
+      Alert.alert('Signup Error', error.message);
+    }
   };
 
   return (

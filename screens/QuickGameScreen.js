@@ -3,8 +3,8 @@ import { View, Text, Button, StyleSheet, Alert, TextInput, ScrollView } from 're
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import moment from 'moment';
-import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { db, auth } from '../firebaseConfig';
+import { collection, query, where, getDocs, addDoc, doc, getDoc } from 'firebase/firestore';
 
 const QuickGame = () => {
   const [selectedGame, setSelectedGame] = useState('');
@@ -18,8 +18,26 @@ const QuickGame = () => {
 
   const startTimes = [
     '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM',
-    '4:00 PM', '6:00 PM', '8:00 PM', '9:00 PM','10:00 PM',
+    '4:00 PM', '6:00 PM', '8:00 PM', '9:00 PM', '10:00 PM',
   ];
+
+  // 🔹 Fetch logged-in user's name & phone
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const userDocRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userDocRef);
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        setName(data.name || '');
+        setPhone(data.mobile || '');
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const fetchBookedSlots = async () => {
     if (!selectedGame) {
@@ -28,7 +46,6 @@ const QuickGame = () => {
     }
 
     const selectedDateStr = moment(date).format('YYYY-MM-DD');
-
     const q = query(
       collection(db, 'bookings'),
       where('date', '==', selectedDateStr),
@@ -70,8 +87,8 @@ const QuickGame = () => {
   };
 
   const handleBooking = async () => {
-    if (!selectedGame || !selectedStartTime || !name.trim() || !phone.trim()) {
-      Alert.alert('Error', 'Please fill all fields: Name, Phone, Game and Start Time.');
+    if (!selectedGame || !selectedStartTime) {
+      Alert.alert('Error', 'Please select game and time.');
       return;
     }
 
@@ -89,12 +106,13 @@ const QuickGame = () => {
     const finalSlot = `${start.format('h:mm A')} - ${end.format('h:mm A')}`;
 
     const bookingData = {
-      name: name.trim(),
-      phone: phone.trim(),
+      name,
+      phone,
       gameType: selectedGame,
       date: moment(date).format('YYYY-MM-DD'),
       startTime: start.format('h:mm A'),
       endTime: end.format('h:mm A'),
+      userId: auth.currentUser.uid // 🔹 store user ID for filtering later
     };
 
     try {
@@ -107,8 +125,6 @@ const QuickGame = () => {
       setSelectedGame('');
       setSelectedStartTime('');
       setSnookerGames('1');
-      setName('');
-      setPhone('');
       fetchBookedSlots();
     } catch (error) {
       Alert.alert('Error', 'Failed to save booking.');
@@ -142,22 +158,12 @@ const QuickGame = () => {
         />
       )}
 
+      {/* Auto-filled Name & Phone */}
       <Text style={styles.label}>Name:</Text>
-      <TextInput
-        style={styles.input}
-        value={name}
-        onChangeText={setName}
-        placeholder="Enter your name"
-      />
+      <TextInput style={styles.input} value={name} editable={false} />
 
       <Text style={styles.label}>Phone Number:</Text>
-      <TextInput
-        style={styles.input}
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-        placeholder="Enter your phone number"
-      />
+      <TextInput style={styles.input} value={phone} editable={false} />
 
       <Text style={styles.label}>Select Game:</Text>
       <View style={styles.buttonGroup}>

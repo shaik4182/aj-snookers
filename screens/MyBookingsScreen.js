@@ -1,19 +1,27 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { db } from '../firebaseConfig';
-import { collection, getDocs } from 'firebase/firestore';
+import { db, auth } from '../firebaseConfig';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import moment from 'moment';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function MyBookings() {
   const [todaysBookings, setTodaysBookings] = useState([]);
   const [pastBookings, setPastBookings] = useState([]);
 
-  const fetchData = async () => {
-    const snapshot = await getDocs(collection(db, 'bookings'));
-    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const fetchBookings = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
 
     const todayStr = moment().format('YYYY-MM-DD');
+
+    // 🔹 Fetch bookings only for logged-in user
+    const q = query(
+      collection(db, 'bookings'),
+      where('userId', '==', user.uid)
+    );
+    const snapshot = await getDocs(q);
+    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     const todayList = data.filter(b => b.date === todayStr);
     const pastList = data.filter(b => b.date < todayStr);
@@ -26,10 +34,10 @@ export default function MyBookings() {
     setPastBookings(pastList);
   };
 
-  // Refresh data whenever this screen is focused
+  // 🔹 Refresh every time screen is focused
   useFocusEffect(
     useCallback(() => {
-      fetchData();
+      fetchBookings();
     }, [])
   );
 
