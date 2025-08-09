@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet, Linking } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { auth, db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
@@ -26,6 +26,14 @@ const HomeScreen = ({ navigation }) => {
         setMembershipDaysLeft(daysLeft);
       }
     }
+  };
+
+  // Open Google Maps shop location
+  const openShopLocation = () => {
+    const shopUrl = "https://maps.app.goo.gl/W4q1CcZ8DECEnyke7";
+    Linking.openURL(shopUrl).catch(() =>
+      Alert.alert("Error", "Unable to open Google Maps")
+    );
   };
 
   // Refresh membership info every time screen is focused

@@ -10,6 +10,7 @@ import HomeStack from './HomeStack';
 import MyBookingsScreen from '../screens/MyBookingsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AdminPanelScreen from '../screens/AdminPanelScreen';
+import ContactUsScreen from '../screens/ContactUsScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -53,6 +54,7 @@ export default function MainTabs() {
         tabBarIcon: ({ color, size }) => {
           let iconName;
           if (route.name === 'Home') iconName = 'home';
+          else if (route.name === 'Contact Us') iconName = 'map';
           else if (route.name === 'My Bookings') iconName = 'calendar';
           else if (route.name === 'Profile') iconName = 'person';
           else if (route.name === 'Admin') iconName = 'settings';
@@ -67,7 +69,7 @@ export default function MainTabs() {
         component={HomeStack}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            e.preventDefault(); // stop default behavior
+            e.preventDefault(); // stop default tab behavior
             navigation.dispatch(
               CommonActions.reset({
                 index: 0,
@@ -77,6 +79,7 @@ export default function MainTabs() {
           },
         })}
       />
+      <Tab.Screen name="Contact Us" component={ContactUsScreen} />
       <Tab.Screen name="My Bookings" component={MyBookingsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
       {role === 'admin' && <Tab.Screen name="Admin" component={AdminPanelScreen} />}

@@ -72,7 +72,15 @@ All required packages are listed in package.json.
     eas login
 
 3. **Build an .aab (Google Play requirement)**
-    eas build -p android --profile production 
+  If using EAS Build (recommended for latest Expo):
+
+    npx eas build --platform android --profile production
+
+The first time, EAS will ask to configure. Choose Managed Workflow and App Bundle.
+
+It will handle Google Keystore automatically (you can download it for backup).
+
+
 
 -p android → Platform
 --profile production → Uses the production config from eas.json
@@ -110,3 +118,4 @@ When the build finishes, Expo will give you a URL to download the .aab or .apk.
 You can then upload the .aab to the Google Play Console.
 
 
+Using Keystore from configuration: Build Credentials Ik2ElrYnvb (default)
