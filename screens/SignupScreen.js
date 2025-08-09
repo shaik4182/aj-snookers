@@ -3,42 +3,12 @@ import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
-import * as Notifications from 'expo-notifications';
-import Constants from 'expo-constants';
 
 export default function SignupScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-
-  const registerForPushNotificationsAsync = async () => {
-    try {
-      if (!Constants.isDevice) {
-        console.log('Push notifications only work on a real device');
-        return null;
-      }
-
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus !== 'granted') {
-        console.log('Push notification permission denied');
-        return null;
-      }
-
-      const tokenData = await Notifications.getExpoPushTokenAsync();
-      return tokenData.data;
-    } catch (err) {
-      console.error('Error getting push token:', err);
-      return null;
-    }
-  };
 
   const handleSignup = async () => {
     if (!email || !password || !name.trim() || !phone.trim()) {
@@ -47,14 +17,9 @@ export default function SignupScreen({ navigation }) {
     }
 
     try {
-      // 1️⃣ Create auth user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2️⃣ Get push notification token
-      const expoPushToken = await registerForPushNotificationsAsync();
-
-      // 3️⃣ Save details to Firestore
       await setDoc(doc(db, 'users', user.uid), {
         name: name.trim(),
         mobile: phone.trim(),
@@ -62,8 +27,7 @@ export default function SignupScreen({ navigation }) {
         membershipActive: false,
         membershipStart: null,
         membershipEnd: null,
-        role: 'user', // default role
-        expoPushToken: expoPushToken || null
+        role: "user"
       });
 
       Alert.alert('Success', 'Signup Successful!');
@@ -76,15 +40,18 @@ export default function SignupScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.logoText}>🎱 AJ Snookers</Text>
+
       <TextInput
         style={styles.input}
         placeholder="Full Name"
+        placeholderTextColor="#ddd"
         value={name}
         onChangeText={setName}
       />
       <TextInput
         style={styles.input}
         placeholder="Phone Number"
+        placeholderTextColor="#ddd"
         keyboardType="phone-pad"
         value={phone}
         onChangeText={setPhone}
@@ -92,6 +59,7 @@ export default function SignupScreen({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Email Address"
+        placeholderTextColor="#ddd"
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -99,11 +67,16 @@ export default function SignupScreen({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Password"
+        placeholderTextColor="#ddd"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
-      <Button title="Sign Up" onPress={handleSignup} />
+
+      <View style={styles.buttonWrapper}>
+        <Button title="Sign Up" color="#FFD700" onPress={handleSignup} />
+      </View>
+
       <Text
         style={styles.link}
         onPress={() => navigation.navigate('Login')}
@@ -118,27 +91,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    backgroundColor: '#fff',
     justifyContent: 'center',
+    backgroundColor: '#004d26', // snooker green
   },
   logoText: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#2c3e50',
+    color: '#FFD700', // gold
     marginBottom: 30,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#aaa',
+    borderColor: '#ccc',
     padding: 12,
     marginBottom: 15,
     borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    color: '#fff',
+  },
+  buttonWrapper: {
+    marginTop: 10,
   },
   link: {
     marginTop: 20,
     textAlign: 'center',
-    color: '#2980b9',
+    color: '#FFD700',
     textDecorationLine: 'underline',
   },
 });
