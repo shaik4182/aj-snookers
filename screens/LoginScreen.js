@@ -3,6 +3,7 @@ import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } fr
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
+import { registerForPushNotificationsAsync } from '../notificationService';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -15,14 +16,15 @@ export default function LoginScreen({ navigation }) {
       return;
     }
 
-    signInWithEmailAndPassword(auth, email, password)
-      .then(userCredential => {
-        Alert.alert('Success', 'Login Successful!');
-        navigation.navigate('MainTabs');
-      })
-      .catch(error => {
-        Alert.alert('Login Error', error.message);
-      });
+signInWithEmailAndPassword(auth, email, password)
+  .then(async (userCredential) => {
+    await registerForPushNotificationsAsync();
+    Alert.alert('Success', 'Login Successful!');
+    navigation.navigate('MainTabs');
+  })
+  .catch(error => {
+    Alert.alert('Login Error', error.message);
+  });
   };
 
   return (
