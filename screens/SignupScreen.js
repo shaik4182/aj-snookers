@@ -3,12 +3,42 @@ import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 
 export default function SignupScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+
+  const registerForPushNotificationsAsync = async () => {
+    try {
+      if (!Constants.isDevice) {
+        console.log('Push notifications only work on a real device');
+        return null;
+      }
+
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== 'granted') {
+        console.log('Push notification permission denied');
+        return null;
+      }
+
+      const tokenData = await Notifications.getExpoPushTokenAsync();
+      return tokenData.data;
+    } catch (err) {
+      console.error('Error getting push token:', err);
+      return null;
+    }
+  };
 
   const handleSignup = async () => {
     if (!email || !password || !name.trim() || !phone.trim()) {
@@ -21,7 +51,10 @@ export default function SignupScreen({ navigation }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2️⃣ Save details to Firestore
+      // 2️⃣ Get push notification token
+      const expoPushToken = await registerForPushNotificationsAsync();
+
+      // 3️⃣ Save details to Firestore
       await setDoc(doc(db, 'users', user.uid), {
         name: name.trim(),
         mobile: phone.trim(),
@@ -29,7 +62,8 @@ export default function SignupScreen({ navigation }) {
         membershipActive: false,
         membershipStart: null,
         membershipEnd: null,
-        role: "user" // default role
+        role: 'user', // default role
+        expoPushToken: expoPushToken || null
       });
 
       Alert.alert('Success', 'Signup Successful!');

@@ -18,7 +18,7 @@ const QuickGame = ({ navigation }) => {
 
   const startTimes = [
     '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM',
-    '4:00 PM', '6:00 PM', '8:00 PM', '9:00 PM', '10:00 PM',
+    '4:00 PM','5:00 PM', '6:00 PM', '8:00 PM', '9:00 PM', '10:00 PM',
   ];
 
   // Fetch user details from Firestore
@@ -78,11 +78,32 @@ const QuickGame = ({ navigation }) => {
     return `${start.format('h:mm A')} - ${end.format('h:mm A')}`;
   };
 
-  const isOverlap = (newStart, newEnd) => {
+  const isPastTime = (time) => {
+    if (moment(date).isSame(moment(), 'day')) {
+      const now = moment();
+      return parseTime(time).isBefore(now);
+    }
+    return false;
+  };
+
+  // ✅ NEW: Correct slot disabling logic
+  const isTimeDisabled = (time) => {
+    const start = parseTime(time);
+    const duration = selectedGame === 'Snooker'
+      ? parseInt(snookerGames || '1') * 30
+      : 60;
+    const end = start.clone().add(duration, 'minutes');
+
+    // Disable if past time today
+    if (isPastTime(time)) return true;
+
+    // Disable if overlaps with any booking
     return bookedSlots.some(({ startTime, endTime }) => {
       const bookedStart = parseTime(startTime);
       const bookedEnd = parseTime(endTime);
-      return newStart.isBefore(bookedEnd) && newEnd.isAfter(bookedStart);
+
+      // Only disable if new slot overlaps
+      return start.isBefore(bookedEnd) && end.isAfter(bookedStart);
     });
   };
 
@@ -97,7 +118,7 @@ const QuickGame = ({ navigation }) => {
     const duration = selectedGame === 'Snooker' ? games * 30 : 60;
     const end = start.clone().add(duration, 'minutes');
 
-    if (isOverlap(start, end)) {
+    if (isTimeDisabled(selectedStartTime)) {
       Alert.alert('Slot Unavailable', 'Selected time overlaps with an existing booking.');
       return;
     }
@@ -132,14 +153,6 @@ const QuickGame = ({ navigation }) => {
     } catch (error) {
       Alert.alert('Error', 'Failed to save booking.');
     }
-  };
-
-  const isPastTime = (time) => {
-    if (moment(date).isSame(moment(), 'day')) {
-      const now = moment();
-      return parseTime(time).isBefore(now);
-    }
-    return false;
   };
 
   return (
@@ -218,10 +231,7 @@ const QuickGame = ({ navigation }) => {
               key={time}
               label={time}
               value={time}
-              enabled={
-                !isOverlap(parseTime(time), parseTime(time).clone().add(selectedGame === 'Snooker' ? parseInt(snookerGames || '1') * 30 : 60, 'minutes'))
-                && !isPastTime(time)
-              }
+              enabled={!isTimeDisabled(time)}
             />
           ))}
         </Picker>

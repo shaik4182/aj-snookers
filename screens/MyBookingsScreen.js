@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 
 export default function MyBookings() {
   const [todaysBookings, setTodaysBookings] = useState([]);
+  const [futureBookings, setFutureBookings] = useState([]);
   const [pastBookings, setPastBookings] = useState([]);
 
   const fetchBookings = async () => {
@@ -15,7 +16,6 @@ export default function MyBookings() {
 
     const todayStr = moment().format('YYYY-MM-DD');
 
-    // 🔹 Fetch bookings only for logged-in user
     const q = query(
       collection(db, 'bookings'),
       where('userId', '==', user.uid)
@@ -24,17 +24,22 @@ export default function MyBookings() {
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     const todayList = data.filter(b => b.date === todayStr);
+    const futureList = data.filter(b => b.date > todayStr);
     const pastList = data.filter(b => b.date < todayStr);
 
-    // Sort newest first
-    todayList.sort((a, b) => new Date(`${b.date} ${b.startTime}`) - new Date(`${a.date} ${a.startTime}`));
-    pastList.sort((a, b) => new Date(`${b.date} ${b.startTime}`) - new Date(`${a.date} ${a.startTime}`));
+    // Sort all lists by date & time
+    const sortByDateTime = (a, b) =>
+      new Date(`${a.date} ${a.startTime}`) - new Date(`${b.date} ${b.startTime}`);
+
+    todayList.sort(sortByDateTime);
+    futureList.sort(sortByDateTime);
+    pastList.sort((a, b) => new Date(`${b.date} ${b.startTime}`) - new Date(`${a.date} ${a.startTime}`)); // newest past first
 
     setTodaysBookings(todayList);
+    setFutureBookings(futureList);
     setPastBookings(pastList);
   };
 
-  // 🔹 Refresh every time screen is focused
   useFocusEffect(
     useCallback(() => {
       fetchBookings();
@@ -43,36 +48,36 @@ export default function MyBookings() {
 
   const renderBooking = ({ item }) => (
     <View style={styles.booking}>
-      <Text>{item.date} — {item.gameType}</Text>
+      <Text>{moment(item.date).format('DD MMM YYYY')} — {item.gameType}</Text>
       <Text>{item.startTime} - {item.endTime}</Text>
     </View>
   );
 
+  const combinedData = [
+    { type: 'header', title: "Today's Bookings" },
+    ...(todaysBookings.length ? todaysBookings : [{ type: 'empty', title: 'No bookings for today.' }]),
+    { type: 'header', title: 'Future Bookings' },
+    ...(futureBookings.length ? futureBookings : [{ type: 'empty', title: 'No future bookings.' }]),
+    { type: 'header', title: 'Past Bookings' },
+    ...(pastBookings.length ? pastBookings : [{ type: 'empty', title: 'No past bookings.' }]),
+  ];
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>My Bookings</Text>
-
-      <Text style={styles.sectionTitle}>Today's Bookings</Text>
-      {todaysBookings.length === 0 ? (
-        <Text style={styles.empty}>No bookings for today.</Text>
-      ) : (
-        <FlatList
-          data={todaysBookings}
-          keyExtractor={(item) => item.id}
-          renderItem={renderBooking}
-        />
-      )}
-
-      <Text style={styles.sectionTitle}>Past Bookings</Text>
-      {pastBookings.length === 0 ? (
-        <Text style={styles.empty}>No past bookings.</Text>
-      ) : (
-        <FlatList
-          data={pastBookings}
-          keyExtractor={(item) => item.id}
-          renderItem={renderBooking}
-        />
-      )}
+      <FlatList
+        data={combinedData}
+        keyExtractor={(item, index) => item.id || `key-${index}`}
+        renderItem={({ item }) => {
+          if (item.type === 'header') {
+            return <Text style={styles.sectionTitle}>{item.title}</Text>;
+          }
+          if (item.type === 'empty') {
+            return <Text style={styles.empty}>{item.title}</Text>;
+          }
+          return renderBooking({ item });
+        }}
+      />
     </View>
   );
 }
@@ -86,7 +91,7 @@ const styles = StyleSheet.create({
   title: { 
     fontSize: 22, 
     fontWeight: 'bold', 
-    marginBottom: 20 
+    marginBottom: 10 
   },
   sectionTitle: {
     fontSize: 18,
@@ -102,6 +107,7 @@ const styles = StyleSheet.create({
   empty: {
     color: 'gray',
     fontStyle: 'italic',
-    marginBottom: 10
+    paddingLeft: 10,
+    marginBottom: 5
   }
 });

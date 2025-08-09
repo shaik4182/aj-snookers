@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native'; // ✅ FIXED: added View & ActivityIndicator
+import { View, ActivityIndicator } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { auth, db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
+import { CommonActions } from '@react-navigation/native';
 
 import HomeStack from './HomeStack';
 import MyBookingsScreen from '../screens/MyBookingsScreen';
@@ -61,7 +62,21 @@ export default function MainTabs() {
         tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="Home" component={HomeStack} />
+      <Tab.Screen
+        name="Home"
+        component={HomeStack}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault(); // stop default behavior
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'Home', state: { routes: [{ name: 'HomeScreen' }] } }],
+              })
+            );
+          },
+        })}
+      />
       <Tab.Screen name="My Bookings" component={MyBookingsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
       {role === 'admin' && <Tab.Screen name="Admin" component={AdminPanelScreen} />}

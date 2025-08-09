@@ -59,3 +59,54 @@ Go to GitHub > Settings > SSH and GPG Keys > New SSH Key
 If you change your system, just run npm install to reinstall all dependencies.
 
 All required packages are listed in package.json.
+
+
+## Expo build .aab and apk files
+
+
+1. **Make sure you have EAS CLI installed**
+ 
+    npm install -g eas-cli
+
+2. **Log in to your Expo account**
+    eas login
+
+3. **Build an .aab (Google Play requirement)**
+    eas build -p android --profile production 
+
+-p android → Platform
+--profile production → Uses the production config from eas.json
+
+If you don’t have an eas.json, Expo will guide you to create one.
+Example eas.json:
+
+{
+  "build": {
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  }
+}
+
+4. **If you want an APK for testing**   
+    eas build -p android --profile preview
+
+Example eas.json entry for APK:
+
+{
+  "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  }
+}
+
+5. **Download the file**
+When the build finishes, Expo will give you a URL to download the .aab or .apk.
+You can then upload the .aab to the Google Play Console.
+
+
