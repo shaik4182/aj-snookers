@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons'; // Make sure you have installed this
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = () => {
     if (!email || !password) {
@@ -16,7 +18,7 @@ export default function LoginScreen({ navigation }) {
     signInWithEmailAndPassword(auth, email, password)
       .then(userCredential => {
         Alert.alert('Success', 'Login Successful!');
-        navigation.navigate('Home');
+        navigation.navigate('MainTabs');
       })
       .catch(error => {
         Alert.alert('Login Error', error.message);
@@ -26,6 +28,7 @@ export default function LoginScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.logoText}>🎱 AJ Snookers</Text>
+
       <TextInput
         style={styles.input}
         placeholder="Email Address"
@@ -33,14 +36,26 @@ export default function LoginScreen({ navigation }) {
         onChangeText={setEmail}
         keyboardType="email-address"
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+
+      <View style={styles.passwordContainer}>
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Password"
+          secureTextEntry={!showPassword}
+          value={password}
+          onChangeText={setPassword}
+        />
+        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+          <Ionicons
+            name={showPassword ? 'eye-off' : 'eye'}
+            size={22}
+            color="#555"
+          />
+        </TouchableOpacity>
+      </View>
+
       <Button title="Login" onPress={handleLogin} />
+
       <Text
         style={styles.link}
         onPress={() => navigation.navigate('Signup')}
@@ -71,6 +86,19 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 15,
     borderRadius: 6,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#aaa',
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    marginBottom: 15,
+  },
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 12,
   },
   link: {
     marginTop: 20,
