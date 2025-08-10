@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Linking, Button, Alert, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Linking, Button, Alert, TextInput, ScrollView } from 'react-native';
 import { db } from '../firebaseConfig';
 import { collection, query, onSnapshot, doc, updateDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import moment from 'moment';
@@ -11,7 +11,6 @@ export default function AdminPanelScreen() {
   const [users, setUsers] = useState([]);
   const [showBookings, setShowBookings] = useState(false);
   const [showUsers, setShowUsers] = useState(false);
-
   const [notificationMessage, setNotificationMessage] = useState('');
 
   useEffect(() => {
@@ -57,7 +56,6 @@ export default function AdminPanelScreen() {
       });
       Alert.alert('Success', 'Membership activated for this user.');
     } catch (error) {
-      console.error('Error activating membership:', error);
       Alert.alert('Error', 'Could not activate membership.');
     }
   };
@@ -69,9 +67,8 @@ export default function AdminPanelScreen() {
         membershipStatus: '',
         membershipActivatedAt: null
       });
-      Alert.alert('Cancelled', 'Membership cancelled for this user.');
+      Alert.alert('Cancelled', 'Membership cancelled.');
     } catch (error) {
-      console.error('Error cancelling membership:', error);
       Alert.alert('Error', 'Could not cancel membership.');
     }
   };
@@ -79,7 +76,7 @@ export default function AdminPanelScreen() {
   const confirmDeleteUser = (userId) => {
     Alert.alert(
       "Delete User",
-      "Are you sure you want to delete this user? This action cannot be undone.",
+      "Are you sure?",
       [
         { text: "Cancel", style: "cancel" },
         { text: "Delete", style: "destructive", onPress: () => deleteUser(userId) }
@@ -89,58 +86,50 @@ export default function AdminPanelScreen() {
 
   const deleteUser = async (userId) => {
     try {
-      await updateDoc(doc(db, "users", userId), { isBanned: true }); // Optional ban
-      await deleteDoc(doc(db, "users", userId)); // Remove from Firestore
+      await deleteDoc(doc(db, "users", userId));
       Alert.alert("Deleted", "User deleted successfully.");
     } catch (error) {
-      console.error("Error deleting user:", error);
       Alert.alert("Error", "Could not delete user.");
     }
   };
 
-  const sendNotificationToAll = async () => {
-    if (!notificationMessage.trim()) {
-      Alert.alert('Error', 'Please enter a message.');
+const sendNotificationToAll = async () => {
+  try {
+    const usersSnapshot = await getDocs(collection(db, 'users'));
+    const tokens = usersSnapshot.docs
+      .map(doc => doc.data().expoPushToken)
+      .filter(token => !!token);
+
+    if (tokens.length === 0) {
+      Alert.alert('Error', 'No push tokens found.');
       return;
     }
 
-    try {
-      const usersSnapshot = await getDocs(collection(db, 'users'));
-      const tokens = usersSnapshot.docs
-        .map(doc => doc.data().expoPushToken)
-        .filter(token => !!token);
+    await Promise.all(
+      tokens.map(token =>
+        fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Accept-encoding': 'gzip, deflate',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: token,
+            sound: 'default',
+            title: '📢 Notice from Snooker Club',
+            body: notificationMessage || ' ',
+          }),
+        })
+      )
+    );
 
-      if (tokens.length === 0) {
-        Alert.alert('Error', 'No push tokens found.');
-        return;
-      }
-
-      await Promise.all(
-        tokens.map(token =>
-          fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: {
-              Accept: 'application/json',
-              'Accept-encoding': 'gzip, deflate',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              to: token,
-              sound: 'default',
-              title: '📢 Notice from Snooker Club',
-              body: notificationMessage,
-            }),
-          })
-        )
-      );
-
-      Alert.alert('Success', 'Notification sent to all users.');
-      setNotificationMessage('');
-    } catch (error) {
-      console.error('Error sending notifications:', error);
-      Alert.alert('Error', 'Failed to send notifications.');
-    }
-  };
+    Alert.alert('Success', 'Notification sent to all users.');
+    setNotificationMessage('');
+  } catch (error) {
+    Alert.alert('Error', 'Failed to send notifications.');
+  }
+};
 
   const renderBookingItem = ({ item }) => {
     let gameIcon = '';
@@ -149,7 +138,6 @@ export default function AdminPanelScreen() {
     } else if (item.gameType?.toLowerCase().includes('snooker')) {
       gameIcon = '🔴';
     }
-
     return (
       <TouchableOpacity style={styles.listItem} onPress={() => callNumber(item.phone)}>
         <Text style={styles.itemText}>
@@ -159,34 +147,32 @@ export default function AdminPanelScreen() {
     );
   };
 
-const renderUserItem = ({ item }) => (
-  <View style={styles.userItem}>
-    <TouchableOpacity onPress={() => callNumber(item.mobile)}>
-      <Text style={styles.itemText}>
-        {item.name} ({item.mobile || 'No phone'}) - {item.role || 'user'} | 
-        {item.membershipStatus ? ` ${item.membershipStatus}` : ' no membership'}
-      </Text>
-    </TouchableOpacity>
+  const renderUserItem = ({ item }) => (
+    <View style={styles.userItem}>
+      <TouchableOpacity onPress={() => callNumber(item.mobile)}>
+        <Text style={styles.itemText}>
+          {item.name} ({item.mobile || 'No phone'}) - {item.role || 'user'} | 
+          {item.membershipStatus ? ` ${item.membershipStatus}` : ' no membership'}
+        </Text>
+      </TouchableOpacity>
 
-    <View style={{ flexDirection: 'row', gap: 8 }}>
-      {item.membershipStatus === 'pending' && (
-        <Button title="Activate" onPress={() => activateMembership(item.id)} />
-      )}
-      {(item.membershipStatus === 'pending' || item.membershipStatus === 'active') && (
-        <Button title="Cancel" color="red" onPress={() => cancelMembership(item.id)} />
-      )}
-      {/* Show delete button only if user is NOT an admin */}
-      {item.role !== 'admin' && (
-        <Button 
-          title="Delete" 
-          color="darkred" 
-          onPress={() => confirmDeleteUser(item.id)} 
-        />
-      )}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {item.membershipStatus === 'pending' && (
+          <Button title="Activate" onPress={() => activateMembership(item.id)} />
+        )}
+        {(item.membershipStatus === 'pending' || item.membershipStatus === 'active') && (
+          <Button title="Cancel" color="red" onPress={() => cancelMembership(item.id)} />
+        )}
+        {item.role !== 'admin' && (
+          <Button 
+            title="Delete" 
+            color="darkred" 
+            onPress={() => confirmDeleteUser(item.id)} 
+          />
+        )}
+      </View>
     </View>
-  </View>
-);
-
+  );
 
   const combinedBookings = [
     { type: 'header', title: `Today's Bookings (${bookingsToday.length})` },
@@ -196,7 +182,7 @@ const renderUserItem = ({ item }) => (
   ];
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <View style={styles.titleBox}>
         <Text style={styles.pageTitle}>📋 Customer Details</Text>
       </View>
@@ -219,11 +205,7 @@ const renderUserItem = ({ item }) => (
         onPress={() => setShowBookings(!showBookings)}
       >
         <Text style={styles.heading}>Bookings ({bookingsToday.length + futureBookings.length})</Text>
-        <Ionicons
-          name={showBookings ? 'chevron-up' : 'chevron-down'}
-          size={20}
-          color="#333"
-        />
+        <Ionicons name={showBookings ? 'chevron-up' : 'chevron-down'} size={20} color="#333" />
       </TouchableOpacity>
 
       {showBookings && (
@@ -231,14 +213,11 @@ const renderUserItem = ({ item }) => (
           data={combinedBookings}
           keyExtractor={(item, index) => item.id || `key-${index}`}
           renderItem={({ item }) => {
-            if (item.type === 'header') {
-              return <Text style={styles.sectionTitle}>{item.title}</Text>;
-            }
-            if (item.type === 'empty') {
-              return <Text style={styles.noData}>{item.title}</Text>;
-            }
+            if (item.type === 'header') return <Text style={styles.sectionTitle}>{item.title}</Text>;
+            if (item.type === 'empty') return <Text style={styles.noData}>{item.title}</Text>;
             return renderBookingItem({ item });
           }}
+          scrollEnabled={false} // Let ScrollView handle main scroll
         />
       )}
 
@@ -248,32 +227,23 @@ const renderUserItem = ({ item }) => (
         onPress={() => setShowUsers(!showUsers)}
       >
         <Text style={styles.heading}>👥 Users ({users.length})</Text>
-        <Ionicons
-          name={showUsers ? 'chevron-up' : 'chevron-down'}
-          size={20}
-          color="#333"
-        />
+        <Ionicons name={showUsers ? 'chevron-up' : 'chevron-down'} size={20} color="#333" />
       </TouchableOpacity>
 
       {showUsers && (
-        <View style={styles.dropdownContent}>
-          {users.length > 0 ? (
-            <FlatList
-              data={users}
-              keyExtractor={item => item.id}
-              renderItem={renderUserItem}
-            />
-          ) : (
-            <Text style={styles.noData}>No users found</Text>
-          )}
-        </View>
+        <FlatList
+          data={users}
+          keyExtractor={item => item.id}
+          renderItem={renderUserItem}
+          scrollEnabled={false} // Let ScrollView handle main scroll
+        />
       )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 15, paddingTop: 35, backgroundColor: '#fff' },
+  container: { flex: 1, padding: 15, backgroundColor: '#fff' },
   titleBox: {
     backgroundColor: '#f1f1f1',
     paddingVertical: 10,
@@ -290,7 +260,6 @@ const styles = StyleSheet.create({
   dropdownHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#ddd' },
   heading: { fontSize: 20, fontWeight: 'bold', color: '#333' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginTop: 10, marginBottom: 8 },
-  dropdownContent: { backgroundColor: '#f9f9f9', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 6, marginBottom: 10 },
   listItem: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
   userItem: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
   itemText: { fontSize: 16 },

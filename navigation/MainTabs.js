@@ -11,6 +11,7 @@ import MyBookingsScreen from '../screens/MyBookingsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AdminPanelScreen from '../screens/AdminPanelScreen';
 import ContactUsScreen from '../screens/ContactUsScreen';
+import AdminStack from './AdminStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -82,7 +83,7 @@ export default function MainTabs() {
       <Tab.Screen name="Contact Us" component={ContactUsScreen} />
       <Tab.Screen name="My Bookings" component={MyBookingsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
-      {role === 'admin' && <Tab.Screen name="Admin" component={AdminPanelScreen} />}
+      {role === 'admin' && <Tab.Screen name="Admin" component={AdminStack} />}
     </Tab.Navigator>
   );
 }

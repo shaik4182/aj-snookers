@@ -57,7 +57,6 @@ export default function MembershipScreen({ navigation }) {
       return;
     }
 
-    // Navigate to PaymentMethod, don't set pending yet
     const bookingData = {
       name,
       phone,
@@ -72,7 +71,7 @@ export default function MembershipScreen({ navigation }) {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Membership</Text>
+      <Text style={styles.title}>🏅 Membership</Text>
 
       {membershipRegistered ? (
         <Text style={styles.successText}>
@@ -84,66 +83,150 @@ export default function MembershipScreen({ navigation }) {
         </Text>
       ) : (
         <>
-          <TextInput style={styles.input} placeholder="Full Name" value={name} onChangeText={setName} />
-          <TextInput style={styles.input} placeholder="Phone Number" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
-          <TextInput style={styles.input} placeholder="Email Address" keyboardType="email-address" value={email} onChangeText={setEmail} />
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            placeholderTextColor="#ccc"
+            value={name}
+            onChangeText={setName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Phone Number"
+            placeholderTextColor="#ccc"
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Email Address"
+            placeholderTextColor="#ccc"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
 
           <Text style={styles.label}>Select Govt ID Type:</Text>
-          <Picker selectedValue={govtIdType} onValueChange={setGovtIdType} style={styles.picker}>
-            <Picker.Item label="-- Select --" value="" />
-            <Picker.Item label="Aadhaar Card" value="aadhaar" />
-            <Picker.Item label="PAN Card" value="pan" />
-          </Picker>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={govtIdType}
+              style={styles.picker}
+              dropdownIconColor="#FFD700"
+              onValueChange={setGovtIdType}
+            >
+              <Picker.Item label="-- Select --" value="" />
+              <Picker.Item label="Aadhaar Card" value="aadhaar" />
+              <Picker.Item label="PAN Card" value="pan" />
+            </Picker>
+          </View>
 
           <TextInput
             style={styles.input}
             placeholder="Enter Aadhaar/PAN Number"
+            placeholderTextColor="#ccc"
             value={aadhaarNumber}
             onChangeText={setAadhaarNumber}
           />
 
-          <Button title="Register Membership (₹5000/month)" onPress={handleRegisterPress} />
+          <Button title="Register Membership (₹5000/month)" color="#1E90FF" onPress={handleRegisterPress} />
         </>
       )}
 
       <Text style={styles.noteTitle}>📝 Membership Info</Text>
       <View style={styles.noteBox}>
-        <Text>⏰ Timing Slots (Daily):</Text>
-        <Text> • Morning: 10:00 AM – 1:00 PM</Text>
-        <Text> • Afternoon: 2:00 PM – 5:00 PM</Text>
+        <Text style={styles.noteText}>⏰ Timing Slots (Daily):</Text>
+        <Text style={styles.noteText}> • Morning: 10:00 AM – 1:00 PM</Text>
+        <Text style={styles.noteText}> • Afternoon: 2:00 PM – 5:00 PM</Text>
         <Text style={styles.spacer} />
-        <Text>🔔 Book your slot before visiting.</Text>
+        <Text style={styles.noteText}>🔔 Book your slot before visiting.</Text>
         <Text style={styles.spacer} />
-        <Text>🎮 Daily Playing Limits:</Text>
-        <Text> 🟢 Snooker: Up to 4 games/day</Text>
-        <Text> 🔵 8 Ball Pool: Up to 2 hours/day</Text>
-        <Text> 🚫 Only one game type Snooker or 8 Ball pool per day.</Text>
+        <Text style={styles.noteText}>🎮 Daily Playing Limits:</Text>
+        <Text style={styles.noteText}> 🟢 Snooker: Up to 4 games/day</Text>
+        <Text style={styles.noteText}> 🔵 8 Ball Pool: Up to 2 hours/day</Text>
+        <Text style={styles.noteText}> 🚫 Only one game type Snooker or 8 Ball pool per day.</Text>
         <Text style={styles.spacer} />
-        <Text>🎁 Benefits:</Text>
-        <Text> 🏆 Win all 4 snooker games → ₹200 reward</Text>
-        <Text> 📅 Valid for 30 days</Text>
-        <Text> 🎫 Priority slot booking</Text>
-        <Text> 📸 One-time Govt ID proof (used every time)</Text>
+        <Text style={styles.noteText}>🎁 Benefits:</Text>
+        <Text style={styles.noteText}> 🏆 Win all 4 snooker games → ₹200 reward</Text>
+        <Text style={styles.noteText}> 📅 Valid for 30 days</Text>
+        <Text style={styles.noteText}> 🎫 Priority slot booking</Text>
+        <Text style={styles.noteText}> 📸 One-time Govt ID proof (used every time)</Text>
         <Text style={styles.spacer} />
-        <Text>📌 Rules:</Text>
-        <Text> ⚠️ Must book slot before arrival</Text>
-        <Text> 🚷 No carry forward of unused time</Text>
-        <Text> 👤 Membership is non-transferable</Text>
-        <Text> 🔄 Re-register after 30 days</Text>
+        <Text style={styles.noteText}>📌 Rules:</Text>
+        <Text style={styles.noteText}> ⚠️ Must book slot before arrival</Text>
+        <Text style={styles.noteText}> 🚷 No carry forward of unused time</Text>
+        <Text style={styles.noteText}> 👤 Membership is non-transferable</Text>
+        <Text style={styles.noteText}> 🔄 Re-register after 30 days</Text>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 12, borderRadius: 6 },
-  picker: { height: 50, width: '100%', marginBottom: 15 },
-  label: { marginBottom: 5 },
-  successText: { marginVertical: 20, color: 'green', fontWeight: 'bold', fontSize: 16 },
-  pendingText: { marginVertical: 20, color: 'orange', fontWeight: 'bold', fontSize: 16 },
-  noteTitle: { fontSize: 20, fontWeight: 'bold', marginTop: 20, marginBottom: 10 },
-  noteBox: { backgroundColor: '#f8f8f8', padding: 15, borderRadius: 10 },
-  spacer: { marginVertical: 6 }
+  container: {
+    padding: 20,
+    backgroundColor: '#004d26', // Dark green background
+    flexGrow: 1,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#FFD700', // Gold
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#FFD700', // Yellow border
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    height: 40,
+    marginBottom: 15,
+    color: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#FFD700',
+    borderRadius: 6,
+    marginBottom: 15,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
+  picker: {
+    color: '#fff',
+  },
+  label: {
+    marginBottom: 5,
+    color: '#fff',
+  },
+  successText: {
+    marginVertical: 20,
+    color: '#28a745',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  pendingText: {
+    marginVertical: 20,
+    color: 'orange',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  noteTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 10,
+    color: '#FFD700',
+  },
+  noteBox: {
+    backgroundColor: '#1E90FF', // Bright blue box for info
+    padding: 15,
+    borderRadius: 10,
+  },
+  noteText: {
+    color: '#fff',
+  },
+  spacer: {
+    marginVertical: 6,
+  },
 });

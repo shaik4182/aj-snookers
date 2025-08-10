@@ -27,13 +27,12 @@ export default function MyBookings() {
     const futureList = data.filter(b => b.date > todayStr);
     const pastList = data.filter(b => b.date < todayStr);
 
-    // Sort all lists by date & time
     const sortByDateTime = (a, b) =>
       new Date(`${a.date} ${a.startTime}`) - new Date(`${b.date} ${b.startTime}`);
 
     todayList.sort(sortByDateTime);
     futureList.sort(sortByDateTime);
-    pastList.sort((a, b) => new Date(`${b.date} ${b.startTime}`) - new Date(`${a.date} ${a.startTime}`)); // newest past first
+    pastList.sort((a, b) => new Date(`${b.date} ${b.startTime}`) - new Date(`${a.date} ${a.startTime}`));
 
     setTodaysBookings(todayList);
     setFutureBookings(futureList);
@@ -48,8 +47,10 @@ export default function MyBookings() {
 
   const renderBooking = ({ item }) => (
     <View style={styles.booking}>
-      <Text>{moment(item.date).format('DD MMM YYYY')} — {item.gameType}</Text>
-      <Text>{item.startTime} - {item.endTime}</Text>
+      <Text style={styles.bookingText}>
+        {moment(item.date).format('DD MMM YYYY')} — {item.gameType}
+      </Text>
+      <Text style={styles.bookingTime}>{item.startTime} - {item.endTime}</Text>
     </View>
   );
 
@@ -86,26 +87,41 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     padding: 20,
-    paddingTop: 40
+    paddingTop: 40,
+    backgroundColor: '#004d26' // Dark green background
   },
   title: { 
-    fontSize: 22, 
+    fontSize: 24, 
     fontWeight: 'bold', 
-    marginBottom: 10 
+    marginBottom: 10,
+    textAlign: 'center',
+    color: '#FFD700' // Yellow title
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginTop: 15,
-    marginBottom: 8
+    marginBottom: 8,
+    color: '#1E90FF' // Bright blue section title
   },
   booking: { 
     padding: 10, 
-    borderBottomWidth: 1, 
-    borderBottomColor: '#ccc' 
+    marginBottom: 8,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1,
+    borderColor: '#FFD700' // Yellow border
+  },
+  bookingText: {
+    fontSize: 16,
+    color: '#fff'
+  },
+  bookingTime: {
+    fontSize: 14,
+    color: '#FFD700'
   },
   empty: {
-    color: 'gray',
+    color: 'rgba(255,255,255,0.7)',
     fontStyle: 'italic',
     paddingLeft: 10,
     marginBottom: 5

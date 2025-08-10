@@ -2,13 +2,40 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
-import { registerForPushNotificationsAsync } from '../notificationService';
+import { auth, db } from '../firebaseConfig';
+import { updateDoc, doc } from 'firebase/firestore';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  const registerForPushNotifications = async () => {
+    try {
+      if (!Device.isDevice) return null;
+
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== 'granted') return null;
+
+      const token = (await Notifications.getExpoPushTokenAsync()).data;
+      console.log("Expo Push Token:", token);
+
+      if (auth.currentUser) {
+        await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+          expoPushToken: token
+        });
+      }
+    } catch (error) {
+      console.error("Push token registration error:", error);
+    }
+  };
 
   const handleLogin = () => {
     if (!email || !password) {
@@ -16,15 +43,15 @@ export default function LoginScreen({ navigation }) {
       return;
     }
 
-signInWithEmailAndPassword(auth, email, password)
-  .then(async (userCredential) => {
-    await registerForPushNotificationsAsync();
-    Alert.alert('Success', 'Login Successful!');
-    navigation.navigate('MainTabs');
-  })
-  .catch(error => {
-    Alert.alert('Login Error', error.message);
-  });
+    signInWithEmailAndPassword(auth, email, password)
+      .then(async () => {
+        await registerForPushNotifications();
+        Alert.alert('Success', 'Login Successful!');
+        navigation.navigate('MainTabs');
+      })
+      .catch(error => {
+        Alert.alert('Login Error', error.message);
+      });
   };
 
   return (
@@ -77,13 +104,13 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     justifyContent: 'center',
-    backgroundColor: '#004d26', // snooker green
+    backgroundColor: '#004d26',
   },
   logoText: {
     fontSize: 30,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#FFD700', // gold
+    color: '#FFD700',
     marginBottom: 30,
   },
   input: {

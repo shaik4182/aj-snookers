@@ -222,19 +222,21 @@ const QuickGame = ({ navigation }) => {
       <Text style={styles.label}>Select Start Time:</Text>
       <View style={styles.pickerContainer}>
         <Picker
-          selectedValue={selectedStartTime}
-          onValueChange={(itemValue) => setSelectedStartTime(itemValue)}
-        >
-          <Picker.Item label="-- Select Start Time --" value="" />
-          {startTimes.map((time) => (
-            <Picker.Item
-              key={time}
-              label={time}
-              value={time}
-              enabled={!isTimeDisabled(time)}
-            />
-          ))}
-        </Picker>
+  selectedValue={selectedStartTime}
+  style={styles.picker} // ✅ Apply white text
+  onValueChange={(itemValue) => setSelectedStartTime(itemValue)}
+>
+  <Picker.Item label="-- Select Start Time --" value="" />
+  {startTimes.map((time) => (
+    <Picker.Item
+      key={time}
+      label={time}
+      value={time}
+      enabled={!isTimeDisabled(time)}
+    />
+  ))}
+</Picker>
+
       </View>
 
       {selectedStartTime && (
@@ -253,37 +255,76 @@ export default QuickGame;
 const styles = StyleSheet.create({
   scrollContainer: {
     padding: 25,
-    backgroundColor: '#fff',
+    backgroundColor: '#013220', // Deep snooker green
     flexGrow: 1,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 25,
     textAlign: 'center',
+    color: '#FFD700', // Gold title
   },
   label: {
     fontSize: 16,
-    marginBottom: 10,
-  },
-  buttonGroup: {
-    marginBottom: 20,
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderColor: '#999',
-    borderRadius: 6,
-    marginBottom: 15,
-  },
-  snookerInput: {
-    marginBottom: 20,
+    marginBottom: 8,
+    color: '#FFFFFF', // White text
   },
   input: {
     borderWidth: 1,
-    borderColor: '#999',
+    borderColor: '#FFD700', // Gold border
     borderRadius: 6,
     paddingHorizontal: 10,
     height: 40,
     marginBottom: 15,
+    backgroundColor: 'rgba(255,255,255,0.08)', // Light transparent background
+    color: '#FFFFFF',
+  },
+pickerContainer: {
+  borderWidth: 1,
+  borderColor: '#FFD700', // gold border
+  borderRadius: 6,
+  marginBottom: 15,
+  backgroundColor: 'rgba(255,255,255,0.15)', // lighter background for visibility
+},
+picker: {
+  color: '#FFFFFF', // white text inside picker
+},
+
+  buttonGroup: {
+    marginBottom: 20,
+  },
+  snookerButton: {
+    backgroundColor: '#228B22', // Forest green for snooker
+    padding: 12,
+    borderRadius: 6,
+    marginBottom: 10,
+  },
+  snookerButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  poolButton: {
+    backgroundColor: '#0066CC', // Deep blue (muted) for pool
+    padding: 12,
+    borderRadius: 6,
+  },
+  poolButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  bookButton: {
+    backgroundColor: '#FFD700', // Gold booking button
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  bookButtonText: {
+    color: '#013220', // Dark green text on gold
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: 16,
   },
 });

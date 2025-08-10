@@ -32,12 +32,12 @@ export default function ContactUsScreen() {
       <Text style={styles.title}>📍 Contact Us</Text>
 
       <TouchableOpacity style={styles.card} onPress={openMaps}>
-        <Ionicons name="location-sharp" size={28} color="#e74c3c" />
+        <Ionicons name="location-sharp" size={28} color="#FFD700" />
         <Text style={styles.cardText}>{shopAddress}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.card} onPress={callNow}>
-        <Ionicons name="call" size={28} color="#27ae60" />
+        <Ionicons name="call" size={28} color="#1E90FF" />
         <Text style={styles.cardText}>Call Now</Text>
       </TouchableOpacity>
 
@@ -47,7 +47,7 @@ export default function ContactUsScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.card} onPress={sendEmail}>
-        <Ionicons name="mail" size={28} color="#2980b9" />
+        <Ionicons name="mail" size={28} color="#FF6347" />
         <Text style={styles.cardText}>{email}</Text>
       </TouchableOpacity>
     </View>
@@ -58,31 +58,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    paddingTop: 60, // ⬅ Added to push content slightly down
-    backgroundColor: '#fff'
+    paddingTop: 50,
+    backgroundColor: '#004d26', // Dark green background
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 25, // Increased spacing from title to first card
+    marginBottom: 25,
     textAlign: 'center',
-    color: '#2c3e50'
+    color: '#FFD700', // Yellow gold title
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(255,255,255,0.1)', // Semi-transparent for style
     padding: 15,
     borderRadius: 8,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
+    borderWidth: 1,
+    borderColor: '#FFD700', // Yellow borders
   },
   cardText: {
     marginLeft: 15,
     fontSize: 16,
-    color: '#333'
-  }
+    color: '#fff', // White text
+  },
 });

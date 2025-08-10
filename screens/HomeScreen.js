@@ -79,26 +79,32 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 30,
-    backgroundColor: '#fff',
+    backgroundColor: '#004d26', // Snooker green
   },
   title: {
     fontSize: 30,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 30,
+    color: '#FFD700', // Gold text
   },
   subtitle: {
     fontSize: 20,
     textAlign: 'center',
     marginBottom: 20,
+    color: '#fff', // White text
   },
   membershipText: {
     fontSize: 18,
     textAlign: 'center',
-    color: '#007BFF',
+    color: '#FFD700',
     marginBottom: 20,
   },
   buttonContainer: {
     marginVertical: 10,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 8,
+    overflow: 'hidden', // keeps button corners rounded
   },
 });
+
