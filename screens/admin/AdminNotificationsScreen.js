@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { db } from '../../firebaseConfig';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 
 export default function AdminNotificationsScreen() {
   const [message, setMessage] = useState('');
@@ -13,6 +13,20 @@ export default function AdminNotificationsScreen() {
     }
 
     try {
+      // --- 1. Save to Firestore ---
+      const now = new Date();
+      const midnight = new Date();
+      midnight.setHours(23, 59, 59, 999);
+
+      await setDoc(doc(db, 'settings', 'adminMessage'), {
+        message: message,
+        createdAt: now.toISOString(),
+        expiresAt: midnight.toISOString(),
+      });
+
+      console.log("✅ Admin message saved to Firestore");
+
+      // --- 2. Send push notifications ---
       const usersSnapshot = await getDocs(collection(db, 'users'));
       const tokens = usersSnapshot.docs
         .map(doc => doc.data().expoPushToken)
@@ -42,7 +56,7 @@ export default function AdminNotificationsScreen() {
         )
       );
 
-      Alert.alert('Success', 'Notification sent to all users.');
+      Alert.alert('Success', 'Notification sent and saved.');
       setMessage('');
     } catch (error) {
       console.error('Error sending notifications:', error);
@@ -56,6 +70,7 @@ export default function AdminNotificationsScreen() {
       <TextInput
         style={styles.input}
         placeholder="Enter your message"
+        placeholderTextColor="#fff"
         value={message}
         onChangeText={setMessage}
       />
@@ -64,8 +79,45 @@ export default function AdminNotificationsScreen() {
   );
 }
 
+
+
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 15, backgroundColor: '#fff' },
-  label: { fontWeight: 'bold', marginBottom: 5, fontSize: 18 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 5, padding: 8, marginBottom: 10 },
+  container: { 
+    flexGrow: 1, 
+    padding: 15, 
+    backgroundColor: '#004d26', 
+    justifyContent: 'center' 
+  },
+  label: { 
+    fontWeight: 'bold', 
+    fontSize: 18, 
+    color: '#FFD700', 
+    marginBottom: 10, 
+    textAlign: 'center' 
+  },
+  input: { 
+    borderWidth: 1, 
+    borderColor: '#FFD700', 
+    borderRadius: 8, 
+    padding: 10, 
+    backgroundColor: 'rgba(255,255,255,0.1)', 
+    color: '#fff',
+    minHeight: 80,
+    textAlignVertical: 'top',
+    marginBottom: 15 
+  },
+  button: { 
+    backgroundColor: '#1E90FF', 
+    padding: 12, 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: '#FFD700',
+    alignItems: 'center' 
+  },
+  buttonText: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: 'bold' 
+  },
+  
 });
