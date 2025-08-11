@@ -7,86 +7,64 @@ export default function AdminPaymentsScreen() {
   const [pendingApprovals, setPendingApprovals] = useState([]);
 
   useEffect(() => {
-    // --- UPI payments pending ---
-    const upiQuery = query(collection(db, 'upiPayments'), where('status', '==', 'pending'));
-    const unsub1 = onSnapshot(upiQuery, (snapshot) => {
-      const upiList = snapshot.docs.map(docSnap => {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          type: 'UPI',
-          name: data.name,
-          phone: data.phone,
-          gameType: data.gameType,
-          amount: data.amount,
-          utr: data.utr,
-          bookingId: data.bookingId,
-          date: data.date || '', // Added date
-          time: data.time || ''  // Added time
-        };
-      });
-      setPendingApprovals(prev => [
-        ...upiList,
-        ...prev.filter(p => p.type !== 'UPI')
-      ]);
-    });
+    const bookingsQuery = query(
+      collection(db, 'bookings'),
+      where('status', '==', 'pending')
+    );
 
-    // --- Cash bookings pending ---
-    const bookingsQuery = query(collection(db, 'bookings'), where('status', '==', 'pending'));
-    const unsub2 = onSnapshot(bookingsQuery, (snapshot) => {
+    let firstLoad = true;
+
+    const unsub = onSnapshot(bookingsQuery, (snapshot) => {
+      if (!firstLoad) {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const booking = change.doc.data();
+            Alert.alert(
+              "📢 New Payment Request",
+              `Name: ${booking.name || 'N/A'}\nPhone: ${booking.phone || 'N/A'}\nGame: ${booking.gameType}\nDate: ${booking.date || 'N/A'}\nTime: ${booking.startTime || 'N/A'}\nAmount: ₹${booking.amount}\nPayment Method: ${booking.paymentMethod}\nUTR: ${booking.utrNumber || 'N/A'}`
+            );
+          }
+        });
+      }
+
       const bookingList = snapshot.docs.map(docSnap => {
         const data = docSnap.data();
         return {
           id: docSnap.id,
-          type: 'Cash',
+          type: data.paymentMethod || 'Cash',
           name: data.name,
           phone: data.phone,
           gameType: data.gameType,
           amount: data.amount,
-          date: data.date || '', // Added date
-          time: data.time || ''  // Added time
+          utr: data.utrNumber || '',
+          date: data.date || '',
+          time: data.startTime || '',
         };
       });
-      setPendingApprovals(prev => [
-        ...bookingList,
-        ...prev.filter(p => p.type !== 'Cash')
-      ]);
+
+      setPendingApprovals(bookingList);
+      firstLoad = false;
     });
 
-    return () => {
-      unsub1();
-      unsub2();
-    };
+    return () => unsub();
   }, []);
 
   const approvePayment = async (item) => {
     try {
-      if (item.type === 'UPI') {
-        await updateDoc(doc(db, 'upiPayments', item.id), { status: 'approved' });
-        if (item.bookingId) {
-          await updateDoc(doc(db, 'bookings', item.bookingId), { status: 'approved' });
-        }
-      } else {
-        await updateDoc(doc(db, 'bookings', item.id), { status: 'approved' });
-      }
+      await updateDoc(doc(db, 'bookings', item.id), { status: 'approved' });
       Alert.alert('✅ Success', 'Approved successfully.');
     } catch (error) {
+      console.error(error);
       Alert.alert('❌ Error', 'Could not approve.');
     }
   };
 
   const rejectPayment = async (item) => {
     try {
-      if (item.type === 'UPI') {
-        await updateDoc(doc(db, 'upiPayments', item.id), { status: 'rejected' });
-        if (item.bookingId) {
-          await updateDoc(doc(db, 'bookings', item.bookingId), { status: 'rejected' });
-        }
-      } else {
-        await updateDoc(doc(db, 'bookings', item.id), { status: 'rejected' });
-      }
+      await updateDoc(doc(db, 'bookings', item.id), { status: 'rejected' });
       Alert.alert('⚠️ Rejected', 'Rejected successfully.');
     } catch (error) {
+      console.error(error);
       Alert.alert('❌ Error', 'Could not reject.');
     }
   };
@@ -106,7 +84,9 @@ export default function AdminPaymentsScreen() {
             <Text style={styles.text}>Date: {item.date}</Text>
             <Text style={styles.text}>Time: {item.time}</Text>
             <Text style={styles.text}>Amount: ₹{item.amount}</Text>
-            {item.type === 'UPI' && <Text style={styles.text}>UTR: {item.utr}</Text>}
+            {item.type === 'UPI' && item.utr ? (
+              <Text style={styles.text}>UTR: {item.utr}</Text>
+            ) : null}
 
             <View style={styles.buttonRow}>
               <Button title="Approve" onPress={() => approvePayment(item)} />
