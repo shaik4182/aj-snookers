@@ -73,7 +73,10 @@ export default function AdminUsers() {
 
       <View style={styles.actionRow}>
         {item.membershipStatus === 'pending' && (
-          <Button title="Activate" color="#27ae60" onPress={() => activateMembership(item.id)} />
+          <>
+            <Button title="Activate" color="#27ae60" onPress={() => activateMembership(item.id)} />
+            <Button title="Cancel" color="#e74c3c" onPress={() => cancelMembership(item.id)} />
+          </>
         )}
         {activeTab === 'members' && item.membershipStatus === 'active' && (
           <Button title="Cancel" color="#e74c3c" onPress={() => cancelMembership(item.id)} />

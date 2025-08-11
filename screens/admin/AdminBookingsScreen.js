@@ -34,12 +34,15 @@ export default function AdminBookings() {
 
   const todayStr = moment().format('YYYY-MM-DD');
 
+  // Filter only approved bookings
+  const approvedBookings = bookings.filter(b => b.status === 'approved');
+
   const filteredBookings = () => {
     if (activeTab === 'today') {
-      return bookings.filter(b => b.date === todayStr);
+      return approvedBookings.filter(b => b.date === todayStr);
     }
     if (activeTab === 'future') {
-      return bookings.filter(b => b.date > todayStr);
+      return approvedBookings.filter(b => b.date > todayStr);
     }
     return [];
   };
@@ -62,7 +65,7 @@ export default function AdminBookings() {
           onPress={() => setActiveTab('today')}
         >
           <Text style={[styles.tabText, activeTab === 'today' && styles.activeTabText]}>
-            Today's Bookings ({bookings.filter(b => b.date === todayStr).length})
+            Today's Bookings ({approvedBookings.filter(b => b.date === todayStr).length})
           </Text>
         </TouchableOpacity>
 
@@ -71,7 +74,7 @@ export default function AdminBookings() {
           onPress={() => setActiveTab('future')}
         >
           <Text style={[styles.tabText, activeTab === 'future' && styles.activeTabText]}>
-            Future Bookings ({bookings.filter(b => b.date > todayStr).length})
+            Future Bookings ({approvedBookings.filter(b => b.date > todayStr).length})
           </Text>
         </TouchableOpacity>
       </View>

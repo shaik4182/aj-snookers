@@ -7,6 +7,8 @@ export default function AdminDashboard({ navigation }) {
     { title: 'Send Notifications', icon: 'notifications', color: '#FFD700', screen: 'AdminNotifications' },
     { title: 'Bookings', icon: 'calendar', color: '#1E90FF', screen: 'AdminBookings' },
     { title: 'Users', icon: 'people', color: '#27ae60', screen: 'AdminUsers' },
+    { title: 'Payment Approval', icon: 'cash', color: '#FF4500', screen: 'AdminPayments' }
+
   ];
 
   return (

@@ -45,14 +45,23 @@ export default function MyBookings() {
     }, [])
   );
 
-  const renderBooking = ({ item }) => (
-    <View style={styles.booking}>
-      <Text style={styles.bookingText}>
-        {moment(item.date).format('DD MMM YYYY')} — {item.gameType}
-      </Text>
-      <Text style={styles.bookingTime}>{item.startTime} - {item.endTime}</Text>
-    </View>
-  );
+const renderBooking = ({ item }) => (
+  <View style={styles.booking}>
+    <Text style={styles.bookingText}>
+      {moment(item.date).format('DD MMM YYYY')} — {item.gameType}
+    </Text>
+    <Text style={styles.bookingTime}>
+      {item.startTime} - {item.endTime}
+    </Text>
+    <Text style={{
+      color: item.status === 'approved' ? 'lightgreen' :
+             item.status === 'pending' ? 'orange' : 'red'
+    }}>
+      Status: {item.status || 'pending'}
+    </Text>
+  </View>
+);
+
 
   const combinedData = [
     { type: 'header', title: "Today's Bookings" },
