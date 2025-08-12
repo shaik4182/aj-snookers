@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Linking, Image, Modal } from 'react-native';
 import { getFirestore, doc, setDoc, updateDoc, addDoc, collection } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
@@ -9,13 +9,13 @@ export default function PaymentMethodScreen({ route, navigation }) {
   const auth = getAuth();
 
   const [utrNumber, setUtrNumber] = useState('');
+  const [showQR, setShowQR] = useState(false);
 
   const submitUPI = async () => {
     if (!utrNumber.trim()) {
       Alert.alert('Error', 'Please enter UTR number after payment.');
       return;
     }
-
     if (bookingData.membership) {
       await handleMembership('UPI', utrNumber);
     } else {
@@ -29,7 +29,7 @@ export default function PaymentMethodScreen({ route, navigation }) {
         ...bookingData,
         paymentMethod: paymentType,
         utrNumber: utr || null,
-        status: 'pending', // ✅ Pending until admin approves
+        status: 'pending', 
         createdAt: new Date().toISOString()
       });
 
@@ -61,7 +61,7 @@ export default function PaymentMethodScreen({ route, navigation }) {
         amount: bookingData.amount,
         paymentMethod: paymentType,
         utrNumber: utr || null,
-        status: 'pending', // ✅ Pending until admin approves
+        status: 'pending',
         requestedAt: new Date().toISOString()
       });
 
@@ -76,20 +76,15 @@ export default function PaymentMethodScreen({ route, navigation }) {
     }
   };
 
-  const startUpiPayment = () => {
-  const upiId = 'ajsnooker@ybl'; // your UPI ID
-  const name = 'AJ Snooker'; // business or person name
+  const upiId = 'ajsnooker@ybl';
+  const name = 'AJ Snooker';
   const amount = bookingData.amount;
   const note = bookingData.membership ? 'Membership Payment' : 'Game Booking Payment';
 
   const upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(name)}&am=${amount}&tn=${encodeURIComponent(note)}&cu=INR`;
 
-  Linking.openURL(upiUrl)
-    .catch(() => {
-      Alert.alert('Error', 'No UPI app found on this device');
-    });
-};
-
+  // QR Image (no SVG)
+  const qrImageUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encodeURIComponent(upiUrl)}`;
 
   return (
     <View style={styles.container}>
@@ -107,17 +102,15 @@ export default function PaymentMethodScreen({ route, navigation }) {
         <Text style={styles.buttonText}>💵 Cash (Pay at counter)</Text>
       </TouchableOpacity>
 
-      {/* UPI Payment */}
+      {/* UPI Payment with QR */}
       <TouchableOpacity
         style={[styles.button, { backgroundColor: '#2196F3' }]}
-        onPress={() => {
-          startUpiPayment();
-        }}
+        onPress={() => setShowQR(true)}
       >
-        <Text style={styles.buttonText}>📱 UPI Payment</Text>
+        <Text style={styles.buttonText}>📱 UPI Payment (Scan QR)</Text>
       </TouchableOpacity>
 
-      {/* UTR Input after UPI */}
+      {/* UTR Input */}
       <TextInput
         style={styles.input}
         placeholder="Enter UTR Number after payment"
@@ -131,6 +124,31 @@ export default function PaymentMethodScreen({ route, navigation }) {
       >
         <Text style={styles.buttonText}>Submit UTR</Text>
       </TouchableOpacity>
+
+      {/* QR Modal */}
+      <Modal visible={showQR} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Scan to Pay</Text>
+            <Image
+              source={{ uri: qrImageUrl }}
+              style={{ width: 250, height: 250, marginBottom: 15 }}
+            />
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: '#673AB7', width: '80%' }]}
+              onPress={() => Linking.openURL(upiUrl)}
+            >
+              <Text style={styles.buttonText}>Open UPI App</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: '#E91E63', width: '80%' }]}
+              onPress={() => setShowQR(false)}
+            >
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -147,5 +165,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     height: 40,
     marginBottom: 15
+  },
+  modalOverlay: {
+    flex: 1, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)'
+  },
+  modalContent: {
+    backgroundColor: '#fff', padding: 20, borderRadius: 10,
+    alignItems: 'center'
   }
 });
